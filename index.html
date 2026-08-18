@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Turnrows Referral Center</title>
+<style>
+:root{--navy:#17324d;--blue:#2b6cb0;--light:#f4f7fa;--green:#2f855a;--red:#c53030;--gold:#b7791f;--border:#d9e2ec}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--light);color:#243b53}
+header{background:var(--navy);color:white;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;gap:15px}
+header h1{margin:0;font-size:20px}header small{opacity:.8}
+nav{display:flex;gap:8px;padding:12px;background:white;border-bottom:1px solid var(--border);overflow:auto}
+nav button{border:0;background:white;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:600;white-space:nowrap}
+nav button.active{background:#e8f0f8;color:var(--navy)}
+main{max-width:1200px;margin:auto;padding:20px}
+.view{display:none}.view.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.card{background:white;border:1px solid var(--border);border-radius:12px;padding:18px}.card .label{font-size:12px;color:#627d98;text-transform:uppercase;font-weight:700}.card .value{font-size:28px;font-weight:800;margin-top:6px}
+.toolbar{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+input,select,textarea{width:100%;padding:10px;border:1px solid #bcccdc;border-radius:7px;background:white;font:inherit}
+button.primary{background:var(--blue);color:white;border:0;padding:10px 14px;border-radius:7px;font-weight:700;cursor:pointer}
+button.secondary{background:white;border:1px solid #bcccdc;padding:9px 12px;border-radius:7px;cursor:pointer}
+table{width:100%;border-collapse:collapse;background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+th,td{padding:11px 10px;border-bottom:1px solid #e6edf3;text-align:left;font-size:14px;vertical-align:top}
+th{background:#f0f4f8;font-size:12px;text-transform:uppercase;color:#52606d}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700;background:#e6edf3}.badge.green{background:#d9f2e3;color:#17663a}.badge.red{background:#fde2e2;color:#9b2c2c}.badge.gold{background:#fff3cd;color:#8a5a00}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px}.modal.open{display:flex}.modalbox{background:white;width:min(620px,100%);max-height:90vh;overflow:auto;border-radius:14px;padding:20px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{margin-bottom:12px}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:5px;color:#52606d}
+.notice{padding:12px;background:#fff7e6;border-left:4px solid #d69e2e;border-radius:5px;margin-bottom:15px}
+.empty{text-align:center;padding:35px;color:#829ab1}
+.linkbox{font-size:12px;word-break:break-all;background:#f0f4f8;padding:9px;border-radius:6px}
+@media(max-width:800px){.cards{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}th:nth-child(n+5),td:nth-child(n+5){display:none}}
+@media(max-width:500px){main{padding:12px}.cards{grid-template-columns:1fr 1fr}.card .value{font-size:23px}}
+</style>
+</head>
+<body>
+<header><div><h1>Turnrows Storage Center</h1><small>Partner Referral Center</small></div><button class="secondary" onclick="exportData()">Export Data</button></header>
+<nav id="nav"></nav>
+<main>
+<section id="dashboard" class="view active">
+<div class="cards">
+<div class="card"><div class="label">Total Referrals</div><div class="value" id="kpiRef">0</div></div>
+<div class="card"><div class="label">Move-Ins</div><div class="value" id="kpiMove">0</div></div>
+<div class="card"><div class="label">Rewards Owed</div><div class="value" id="kpiOwed">$0</div></div>
+<div class="card"><div class="label">Rewards Paid</div><div class="value" id="kpiPaid">$0</div></div>
+</div>
+<div class="notice"><b>Recommended rule:</b> the $50 Amazon gift card becomes eligible only after the referred customer moves in and pays.</div>
+<h2>Top Partners</h2><table><thead><tr><th>Partner</th><th>Type</th><th>Referrals</th><th>Move-Ins</th><th>Earned</th></tr></thead><tbody id="topPartners"></tbody></table>
+</section>
+
+<section id="partners" class="view">
+<div class="toolbar"><h2>Partners</h2><button class="primary" onclick="openPartner()">+ Add Partner</button></div>
+<table><thead><tr><th>Partner</th><th>Type</th><th>Contact</th><th>Code</th><th>Referrals</th><th>Move-Ins</th><th>Link</th><th></th></tr></thead><tbody id="partnerRows"></tbody></table>
+</section>
+
+<section id="referrals" class="view">
+<div class="toolbar"><h2>Referrals</h2><button class="primary" onclick="openReferral()">+ New Referral</button></div>
+<table><thead><tr><th>Customer</th><th>Partner</th><th>Date</th><th>Need</th><th>Status</th><th>Move-In</th><th>Reward</th><th></th></tr></thead><tbody id="refRows"></tbody></table>
+</section>
+
+<section id="rewards" class="view">
+<div class="toolbar"><h2>Rewards</h2><button class="primary" onclick="openReward()">+ Record Gift Card</button></div>
+<table><thead><tr><th>Customer</th><th>Partner</th><th>Amount</th><th>Status</th><th>Date Due</th><th>Date Sent</th><th>Amazon Ref.</th><th></th></tr></thead><tbody id="rewardRows"></tbody></table>
+</section>
+
+<section id="links" class="view">
+<div class="toolbar"><h2>Partner Links & QR Codes</h2></div>
+<div class="notice">Each partner gets a unique referral URL. Put it on their cards, flyers, email signature, or QR code. The URL identifies the referring partner automatically.</div>
+<table><thead><tr><th>Partner</th><th>Referral URL</th><th>QR</th></tr></thead><tbody id="linkRows"></tbody></table>
+</section>
+</main>
+
+<div class="modal" id="modal"><div class="modalbox" id="modalbox"></div></div>
+
+<script>
+const KEY="turnrowsReferralV2";
+const seedPartners=[
+["STONE50","Stone Gables","Apartment","","","A"],
+["SOUTH50","South Pointe at Wayside","Apartment","","","A"],
+["WEDGE50","Wedgefield Apartments","Apartment","","","A"],
+["CLUBPOND50","Club Pond Apartments","Apartment","","","B"],
+["HIVE50","Hive Realty Group","Realtor","","","A"],
+["TISHA50","Homes with Tisha Evans","Realtor","","","A"],
+["CURTIS50","Curtis Blake Jr Real Estate","Realtor","","","B"],
+["GOLDEN50","Golden Agent Realty","Realtor","","","B"],
+["LE50","L&E Empire Realty","Realtor","","","B"],
+["SANDQ50","S&Q Movers","Moving Company","","","A"],
+["BIGGUYS50","Big Guys Moving & Storage","Moving Company","","","B"],
+["PINELAND50","Pineland Property Management","Property Management","","","A"]
+];
+let data=JSON.parse(localStorage.getItem(KEY)||"null")||{partners:seedPartners.map(x=>({id:x[0],name:x[1],type:x[2],contact:x[3],phone:x[4],priority:x[5]})),referrals:[],rewards:[]};
+function save(){localStorage.setItem(KEY,JSON.stringify(data));render();}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function partner(id){return data.partners.find(p=>p.id===id)}
+function money(n){return "$"+Number(n||0).toLocaleString()}
+function refStatusBadge(s){let c=s==="Moved In"||s==="Reward Due"||s==="Reward Sent"?"green":s==="Lost"?"red":"gold";return `<span class="badge ${c}">${esc(s)}</span>`}
+function nav(){
+const items=[["dashboard","Dashboard"],["partners","Partners"],["referrals","Referrals"],["rewards","Rewards"],["links","Partner Links"]];
+document.getElementById("nav").innerHTML=items.map(x=>`<button onclick="show('${x[0]}')" id="nav-${x[0]}">${x[1]}</button>`).join("");
+document.getElementById("nav-dashboard").classList.add("active")
+}
+function show(id){document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));document.getElementById("nav-"+id).classList.add("active");render()}
+function render(){
+const refs=data.referrals,moved=refs.filter(r=>["Moved In","Reward Due","Reward Sent"].includes(r.status)).length;
+const owed=refs.filter(r=>r.status==="Reward Due").length*50;
+const paid=data.rewards.filter(r=>r.status==="Paid").length*50;
+kpiRef.textContent=refs.length;kpiMove.textContent=moved;kpiOwed.textContent=money(owed);kpiPaid.textContent=money(paid);
+topPartners.innerHTML=data.partners.map(p=>{let rr=refs.filter(r=>r.partnerId===p.id),m=rr.filter(r=>["Moved In","Reward Due","Reward Sent"].includes(r.status)).length;return [p,rr.length,m,m*50]}).sort((a,b)=>b[2]-a[2]||b[1]-a[1]).slice(0,10).map(x=>`<tr><td>${esc(x[0].name)}</td><td>${esc(x[0].type)}</td><td>${x[1]}</td><td>${x[2]}</td><td>${money(x[3])}</td></tr>`).join("")||`<tr><td colspan=5 class=empty>No referrals yet.</td></tr>`;
+partnerRows.innerHTML=data.partners.map(p=>{let rr=refs.filter(r=>r.partnerId===p.id),m=rr.filter(r=>["Moved In","Reward Due","Reward Sent"].includes(r.status)).length;let link=location.href.split("#")[0]+"?ref="+encodeURIComponent(p.id);return `<tr><td><b>${esc(p.name)}</b></td><td>${esc(p.type)}</td><td>${esc(p.contact||"")}</td><td>${esc(p.id)}</td><td>${rr.length}</td><td>${m}</td><td><button class=secondary onclick="copyText('${esc(link)}')">Copy</button></td><td><button class=secondary onclick="openPartner('${p.id}')">Edit</button></td></tr>`}).join("");
+refRows.innerHTML=refs.map((r,i)=>`<tr><td><b>${esc(r.customer)}</b><br><small>${esc(r.phone||"")}</small></td><td>${esc(partner(r.partnerId)?.name||"Unknown")}</td><td>${esc(r.date||"")}</td><td>${esc(r.need||"")}</td><td>${refStatusBadge(r.status)}</td><td>${esc(r.moveIn||"")}</td><td>${r.status==="Reward Due"?'<span class="badge red">$50 DUE</span>':r.status==="Reward Sent"?'<span class="badge green">PAID</span>':"—"}</td><td><button class=secondary onclick="openReferral('${r.id}')">Edit</button></td></tr>`).join("")||`<tr><td colspan=8 class=empty>No referrals yet.</td></tr>`;
+rewardRows.innerHTML=data.rewards.map((r,i)=>`<tr><td>${esc(r.customer)}</td><td>${esc(partner(r.partnerId)?.name||"")}</td><td>${money(r.amount)}</td><td>${r.status==="Paid"?'<span class="badge green">Paid</span>':'<span class="badge red">Pending</span>'}</td><td>${esc(r.due||"")}</td><td>${esc(r.sent||"")}</td><td>${esc(r.amazonRef||"")}</td><td><button class=secondary onclick="openReward('${r.id}')">Edit</button></td></tr>`).join("")||`<tr><td colspan=8 class=empty>No rewards recorded yet.</td></tr>`;
+linkRows.innerHTML=data.partners.map(p=>{let link=location.href.split("#")[0]+"?ref="+encodeURIComponent(p.id);let qr="https://quickchart.io/qr?size=220&text="+encodeURIComponent(link);return `<tr><td><b>${esc(p.name)}</b><br><small>${esc(p.id)}</small></td><td><div class=linkbox>${esc(link)}</div><br><button class=secondary onclick="copyText('${esc(link)}')">Copy Link</button></td><td><a href="${qr}" target="_blank"><img src="${qr}" width="100" height="100" alt="QR"></a></td></tr>`}).join("");
+}
+function openPartner(id){
+let p=partner(id)||{id:"",name:"",type:"Apartment",contact:"",phone:"",priority:"B"};
+modalbox.innerHTML=`<h2>${id?"Edit":"Add"} Partner</h2><div class=grid2>
+<div class=field><label>Partner ID</label><input id=f_id value="${esc(p.id)}" ${id?"readonly":""}></div>
+<div class=field><label>Partner Name</label><input id=f_name value="${esc(p.name)}"></div>
+<div class=field><label>Type</label><select id=f_type>${["Apartment","Realtor","Property Management","HOA","Home Builder","Moving Company","Other"].map(x=>`<option ${x===p.type?"selected":""}>${x}</option>`).join("")}</select></div>
+<div class=field><label>Priority</label><select id=f_priority>${["A","B","C"].map(x=>`<option ${x===p.priority?"selected":""}>${x}</option>`).join("")}</select></div>
+<div class=field><label>Contact Name</label><input id=f_contact value="${esc(p.contact)}"></div>
+<div class=field><label>Phone</label><input id=f_phone value="${esc(p.phone)}"></div></div>
+<div style="display:flex;gap:8px;justify-content:flex-end"><button class=secondary onclick="closeModal()">Cancel</button><button class=primary onclick="savePartner('${id||""}')">Save</button></div>`;
+modal.classList.add("open")
+}
+function savePartner(old){
+let p={id:f_id.value.trim().toUpperCase(),name:f_name.value.trim(),type:f_type.value,priority:f_priority.value,contact:f_contact.value.trim(),phone:f_phone.value.trim()};
+if(!p.id||!p.name){alert("Partner ID and name are required.");return}
+if(old){Object.assign(partner(old),p)}else{if(partner(p.id)){alert("Partner ID already exists.");return}data.partners.push(p)}
+closeModal();save()
+}
+function openReferral(id){
+let r=data.referrals.find(x=>x.id===id)||{id:"",partnerId:new URLSearchParams(location.search).get("ref")||data.partners[0]?.id||"",customer:"",phone:"",email:"",date:new Date().toISOString().slice(0,10),need:"",status:"New",moveIn:"",notes:""};
+modalbox.innerHTML=`<h2>${id?"Update":"New"} Referral</h2><div class=grid2>
+<div class=field><label>Referral Partner</label><select id=r_partner>${data.partners.map(p=>`<option value="${esc(p.id)}" ${p.id===r.partnerId?"selected":""}>${esc(p.name)} (${esc(p.id)})</option>`).join("")}</select></div>
+<div class=field><label>Date Received</label><input type=date id=r_date value="${esc(r.date)}"></div>
+<div class=field><label>Customer Name</label><input id=r_customer value="${esc(r.customer)}"></div>
+<div class=field><label>Phone</label><input id=r_phone value="${esc(r.phone)}"></div>
+<div class=field><label>Email</label><input id=r_email value="${esc(r.email)}"></div>
+<div class=field><label>Storage Need</label><input id=r_need placeholder="10x10, parking, etc." value="${esc(r.need)}"></div>
+<div class=field><label>Status</label><select id=r_status>${["New","Contacted","Reserved","Moved In","Lost","Reward Due","Reward Sent"].map(x=>`<option ${x===r.status?"selected":""}>${x}</option>`).join("")}</select></div>
+<div class=field><label>Move-In Date</label><input type=date id=r_movein value="${esc(r.moveIn||"")}"></div></div>
+<div class=field><label>Notes</label><textarea id=r_notes>${esc(r.notes||"")}</textarea></div>
+<div style="display:flex;gap:8px;justify-content:flex-end"><button class=secondary onclick="closeModal()">Cancel</button><button class=primary onclick="saveReferral('${id||""}')">Save</button></div>`;
+modal.classList.add("open")
+}
+function saveReferral(id){
+let r={id:id||"REF-"+Date.now(),partnerId:r_partner.value,customer:r_customer.value.trim(),phone:r_phone.value.trim(),email:r_email.value.trim(),date:r_date.value,need:r_need.value.trim(),status:r_status.value,moveIn:r_movein.value,notes:r_notes.value.trim()};
+if(!r.customer){alert("Customer name is required.");return}
+let existing=data.referrals.find(x=>x.id===id);
+if(existing){Object.assign(existing,r)}else{data.referrals.unshift(r)}
+if(["Reward Due","Reward Sent"].includes(r.status) && !data.rewards.some(x=>x.referralId===r.id)){
+data.rewards.unshift({id:"REW-"+Date.now(),partnerId:r.partnerId,referralId:r.id,customer:r.customer,amount:50,status:"Pending",due:new Date().toISOString().slice(0,10),sent:"",amazonRef:"",notes:""});
+}
+closeModal();save()
+}
+function openReward(id){
+let r=data.rewards.find(x=>x.id===id)||{id:"",partnerId:data.partners[0]?.id||"",referralId:"",customer:"",amount:50,status:"Pending",due:new Date().toISOString().slice(0,10),sent:"",amazonRef:"",notes:""};
+modalbox.innerHTML=`<h2>${id?"Edit":"Record"} Gift Card</h2><div class=grid2>
+<div class=field><label>Partner</label><select id=w_partner>${data.partners.map(p=>`<option value="${esc(p.id)}" ${p.id===r.partnerId?"selected":""}>${esc(p.name)}</option>`).join("")}</select></div>
+<div class=field><label>Customer</label><input id=w_customer value="${esc(r.customer)}"></div>
+<div class=field><label>Amount</label><input type=number id=w_amount value="${esc(r.amount)}"></div>
+<div class=field><label>Status</label><select id=w_status><option ${r.status==="Pending"?"selected":""}>Pending</option><option ${r.status==="Paid"?"selected":""}>Paid</option><option ${r.status==="Cancelled"?"selected":""}>Cancelled</option></select></div>
+<div class=field><label>Date Due</label><input type=date id=w_due value="${esc(r.due)}"></div>
+<div class=field><label>Date Sent</label><input type=date id=w_sent value="${esc(r.sent||"")}"></div>
+<div class=field><label>Amazon Order / Reference</label><input id=w_ref value="${esc(r.amazonRef||"")}"></div></div>
+<div style="display:flex;gap:8px;justify-content:flex-end"><button class=secondary onclick="closeModal()">Cancel</button><button class=primary onclick="saveReward('${id||""}')">Save</button></div>`;
+modal.classList.add("open")
+}
+function saveReward(id){
+let r={id:id||"REW-"+Date.now(),partnerId:w_partner.value,referralId:"",customer:w_customer.value.trim(),amount:Number(w_amount.value||50),status:w_status.value,due:w_due.value,sent:w_sent.value,amazonRef:w_ref.value.trim(),notes:""};
+let existing=data.rewards.find(x=>x.id===id);if(existing){Object.assign(existing,r)}else{data.rewards.unshift(r)}
+closeModal();save()
+}
+function closeModal(){modal.classList.remove("open")}
+function copyText(t){navigator.clipboard?.writeText(t);alert("Copied!")}
+function exportData(){
+let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});let a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="turnrows-referral-backup.json";a.click();URL.revokeObjectURL(a.href)
+}
+nav();render();
+</script>
+</body>
+</html>
